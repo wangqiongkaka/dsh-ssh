@@ -150,8 +150,7 @@
   opacity: .45;
   cursor: default;
 }
-.dsh-ssh-panel button:focus-visible,
-.ssh-guide:focus-visible {
+.dsh-ssh-panel button:focus-visible {
   outline: 2px solid var(--dsw-alias-brand-primary,#477fe7);
   outline-offset: 2px;
 }
@@ -317,30 +316,6 @@
 .ssh-job button {
   margin-left: auto;
   color: #b34949;
-}
-.ssh-guide {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  text-align: left;
-  padding: 14px 16px;
-  border: 1px solid var(--dsw-alias-border-l1,#e5e7eb);
-  border-radius: 10px;
-  background: var(--dsw-alias-bg-base,#fff);
-  color: var(--dsw-alias-label-primary,#222831);
-  cursor: pointer;
-  font: inherit;
-  font-size: 12px;
-  line-height: 1.5;
-}
-.ssh-guide > span {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-.ssh-guide small {
-  color: var(--dsw-alias-label-secondary,#69717d);
-  font-size: 11px;
 }
 @media (max-width: 340px) {
   .ssh-content {

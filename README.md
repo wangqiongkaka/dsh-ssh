@@ -10,10 +10,10 @@
 npm install --legacy-peer-deps
 npm run check
 npm pack
-dsh plugin --profile web add /绝对路径/dsh-ssh-0.1.0.tgz
+dsh plugin --profile web add /绝对路径/dsh-ssh-0.1.1.tgz
 ```
 
-桌面端可在插件管理页选择生成的 `dsh-ssh-0.1.0.tgz` 本地安装包。重启或重新加载插件后，在当前会话右侧栏的新增标签页中选择 **SSH 远程**。
+桌面端可在插件管理页选择生成的 `dsh-ssh-0.1.1.tgz` 本地安装包。重启或重新加载插件后，在当前会话右侧栏的新增标签页中选择 **SSH 远程**。
 
 ## 使用
 

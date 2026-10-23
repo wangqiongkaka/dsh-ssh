@@ -157,11 +157,7 @@ export function apply(ctx) {
     };
     return <SshPanel key={sessionId} sessionId={sessionId} onNotify={notify} />;
   }
-  function Guide({ kind, title, description, useTabInfo }) {
-    const { tab } = useTabInfo();
-    return <button className="ssh-guide" type="button" data-sidebar-right-guide-entry={kind} onClick={() => tab.actions.openTab(kind, { replaceTab: true })}><SshIcon size={26} /><span><strong>{title}</strong><small>{description}</small><small>由 dsh-ssh 插件提供</small></span></button>;
-  }
-  for (const [slot, component] of [['sidebar.right.pane.tab', Body], ['sidebar.right.pane.tab.title', () => <><SshIcon size={16} /> SSH 远程</>], ['sidebar.right.tab.guide.entry', Guide]]) {
+  for (const [slot, component] of [['sidebar.right.pane.tab', Body], ['sidebar.right.pane.tab.title', () => <><SshIcon size={16} /> SSH 远程</>]]) {
     ctx.effect(() => ctx.slots.inject(slot, () => ctx.slots.register({ name: slot, key: 'dsh-ssh' }, component)));
   }
 }
