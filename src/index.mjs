@@ -21,6 +21,13 @@ export async function apply(ctx) {
   await bridge.start();
   ctx.on('session/disposed', session => manager.revoke(session.id));
   const methods = { ...aiMethods, authorize: 'authorize', revoke: 'revoke',
+    'setup.start': (sessionId, input) => {
+      if (manager.state(sessionId).state !== 'disconnected') throw new Error('请先撤销当前连接，再配置免密登录');
+      return manager.setup.start(sessionId, input);
+    },
+    'setup.state': sessionId => manager.setup.state(sessionId),
+    'setup.confirm': (sessionId, input) => manager.setup.confirm(sessionId, input),
+    'setup.cancel': sessionId => manager.setup.cancel(sessionId),
     'terminal.open': 'openTerminal', 'terminal.read': 'terminalRead', 'terminal.write': 'terminalWrite',
     'terminal.resize': 'terminalResize', 'terminal.close': 'terminalClose',
     instructions: async sessionId => {
@@ -38,7 +45,7 @@ export async function apply(ctx) {
           const { sessionId, ...input } = await readJson(request);
           requireText(sessionId, '会话 ID', 256);
           if (!ctx.sessions.get(sessionId)) throw new Error('会话未加载，请先打开该会话');
-          const value = await (typeof method === 'function' ? method(sessionId) : manager[method](sessionId, input));
+          const value = await (typeof method === 'function' ? method(sessionId, input) : manager[method](sessionId, input));
           return Response.json({ ok: true, value }, { headers: { 'Cache-Control': 'no-store' } });
         } catch (error) { return Response.json({ ok: false, error: error.message }, { status: 400, headers: { 'Cache-Control': 'no-store' } }); }
       },

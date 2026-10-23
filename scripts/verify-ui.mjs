@@ -14,6 +14,7 @@ const style=document.createElement('style');style.textContent=panel+'\\n'+xterm;
 createRoot(document.getElementById('root')).render(<SshPanel sessionId="ui-test" onNotify={async text=>{window.notified=text;}}/>);`);
 await build({ entryPoints: ['.cache/ui-entry.jsx'], outfile: '.cache/ui.js', bundle: true, platform: 'browser', format: 'esm', jsx: 'automatic', loader: { '.css': 'text' } });
 let connected = false, output = '', input = '', terminalRunning = false, authorizations = 0;
+let setup = { phase: 'idle', running: false }, setupCount = 0;
 const state = () => ({ state: connected ? 'connected' : 'disconnected', connection: { host: 'prod.example.com', user: 'deploy', port: 2222 }, identity: 'deploy\nproduction-01\n/home/deploy', jobs: [], terminal: terminalRunning ? { running: true } : null });
 const server = createServer(async (request, response) => {
   if (request.url === '/ui.js') { response.setHeader('Content-Type', 'text/javascript'); response.end(await readFile('.cache/ui.js')); return; }
@@ -24,6 +25,19 @@ const server = createServer(async (request, response) => {
     assert.equal(payload.sessionId, 'ui-test');
     let value;
     if (method === 'status') value = state();
+    else if (method === 'setup.state') value = setup;
+    else if (method === 'setup.start') {
+      assert.equal(payload.password, 'fixture-only-password');
+      setup = { id: `setup-${++setupCount}`, phase: 'host-key', running: true, connection: { host: payload.host, user: payload.user, port: payload.port }, fingerprint: 'SHA256:FixtureHostFingerprint123', hostPrompt: 'The authenticity of host prod.example.com cannot be established.\nED25519 key fingerprint is SHA256:FixtureHostFingerprint123.\nAre you sure you want to continue connecting (yes/no)?' };
+      value = setup;
+    }
+    else if (method === 'setup.confirm') {
+      assert.equal(payload.fingerprint, setup.fingerprint);
+      setup = { ...setup, phase: payload.trust ? 'success' : 'cancelled', running: false, hostPrompt: undefined,
+        identityFile: '/home/dsh/.ssh/dsh-ssh/id_ed25519_fixture', mayHaveInstalledKey: payload.trust };
+      value = { ok: true };
+    }
+    else if (method === 'setup.cancel') { setup = { ...setup, phase: 'cancelled', running: false }; value = { ok: true }; }
     else if (method === 'authorize') { assert.equal(payload.host, 'prod.example.com'); connected = true; authorizations++; value = state(); }
     else if (method === 'instructions') value = { text: '当前会话已授权远程操作 prod.example.com' };
     else if (method === 'revoke') { connected = false; terminalRunning = false; value = state(); }
@@ -54,6 +68,35 @@ try {
   await page.getByRole('button', { name: '保存连接信息', exact: true }).click();
   assert.equal(authorizations, 0);
   await page.screenshot({ path: 'docs/ssh-connect.png', fullPage: true });
+  await page.getByRole('button', { name: '配置免密登录', exact: true }).click();
+  await page.getByLabel('首次登录密码', { exact: true }).fill('fixture-only-password');
+  await page.locator('.ssh-setup').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: 'docs/ssh-setup-password.png', fullPage: true });
+  await page.getByRole('button', { name: '生成密钥并配置免密', exact: true }).click();
+  await page.getByRole('alertdialog', { name: '确认远端主机指纹' }).waitFor();
+  assert.equal(await page.getByLabel('主机 / SSH 别名').isDisabled(), true);
+  assert.equal(authorizations, 0);
+  await page.locator('.ssh-setup').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: 'docs/ssh-setup-fingerprint.png', fullPage: true });
+  await page.getByRole('button', { name: '不信任并取消', exact: true }).click();
+  await page.getByText('配置已取消', { exact: true }).waitFor();
+  await page.getByLabel('首次登录密码', { exact: true }).fill('fixture-only-password');
+  await page.getByRole('button', { name: '生成密钥并配置免密', exact: true }).click();
+  await page.getByRole('alertdialog', { name: '确认远端主机指纹' }).waitFor();
+  await page.getByRole('button', { name: '指纹正确，信任此主机', exact: true }).click();
+  await page.getByText('免密登录已验证', { exact: true }).waitFor();
+  assert.equal(await page.getByLabel('首次登录密码', { exact: true }).inputValue(), '');
+  assert.equal(await page.getByLabel('私钥路径', { exact: false }).inputValue(), '/home/dsh/.ssh/dsh-ssh/id_ed25519_fixture');
+  assert.equal(authorizations, 0);
+  assert.equal(await page.evaluate(() => JSON.stringify(localStorage).includes('fixture-only-password')), false);
+  await page.getByRole('button', { name: '保存连接信息', exact: true }).click();
+  await page.locator('.ssh-setup').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: 'docs/ssh-setup-success.png', fullPage: true });
+  await page.setViewportSize({ width: 320, height: 850 });
+  await page.locator('.ssh-setup').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: 'docs/ssh-setup-narrow.png', fullPage: true });
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+  await page.setViewportSize({ width: 740, height: 930 });
   await page.getByRole('button', { name: '连接并授权当前会话' }).click();
   await page.locator('.xterm-screen').waitFor();
   await page.getByRole('button', { name: '通知当前会话 AI' }).click();
@@ -72,5 +115,5 @@ try {
   assert.equal(authorizations, 1);
   assert.equal(await page.getByLabel('主机 / SSH 别名').inputValue(), 'prod.example.com');
   assert.deepEqual(errors, []);
-  process.stdout.write('界面验证通过：连接、保存不授权、AI 通知、终端输入输出、撤销、重载和 320px 布局；截图已保存到 docs/。\n');
+  process.stdout.write('界面验证通过：免密配置、拒绝和确认指纹、密码清空且不保存、密钥路径回填、配置不自动授权，以及连接、终端、撤销、重载和 320px 布局。\n');
 } finally { await browser?.close(); await new Promise(resolve => server.close(resolve)); }

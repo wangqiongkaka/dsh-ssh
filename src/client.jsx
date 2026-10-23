@@ -3,6 +3,7 @@ import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import xtermCss from '@xterm/xterm/css/xterm.css';
 import panelCss from './client.css';
+import { PasswordlessSetupView } from './setup-view.jsx';
 
 export const inject = ['slots', 'sidebarRightTabs', 'sessions'];
 export async function api(sessionId, method, input = {}, signal) {
@@ -73,6 +74,7 @@ export function SshPanel({ sessionId, onNotify }) {
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const [showTerminal, setShowTerminal] = useState(false);
+  const [setupRunning, setSetupRunning] = useState(false);
   const mounted = useRef(false);
   useEffect(() => {
     mounted.current = true; const controller = new AbortController(); let timer;
@@ -126,17 +128,19 @@ export function SshPanel({ sessionId, onNotify }) {
         const result = await api(sessionId, 'authorize', form);
         if (mounted.current) { setState(result); setShowTerminal(true); }
       }); }}>
-        <div className="ssh-intro"><SshIcon size={30} /><h2>连接你的远端机器</h2><p>使用本机 SSH 配置、密钥或 SSH Agent，授权当前会话进行远程操作。</p></div>
-        {profiles.length > 0 && <label className="ssh-field">已保存的连接<select aria-label="已保存的连接" value="" disabled={busy || connecting} onChange={event => { const row = profiles[Number(event.target.value)]; if (row) setForm({ ...emptyConnection, ...row }); }}><option value="" disabled>选择一个连接</option>{profiles.map((row, index) => <option key={index} value={index}>{row.user ? `${row.user}@` : ''}{row.host}{row.port ? `:${row.port}` : ''}</option>)}</select></label>}
-        <label className="ssh-field">主机 / SSH 别名<input required autoComplete="off" placeholder="例如 prod 或 192.168.1.10" value={form.host} disabled={busy || connecting} onChange={event => setForm({ ...form, host: event.target.value })} /></label>
-        <div className="ssh-field-row"><label className="ssh-field">用户名<input autoComplete="off" placeholder="使用 SSH 配置" value={form.user} disabled={busy || connecting} onChange={event => setForm({ ...form, user: event.target.value })} /></label><label className="ssh-field">端口<input inputMode="numeric" type="number" min="1" max="65535" placeholder="SSH 配置 / 22" value={form.port} disabled={busy || connecting} onChange={event => setForm({ ...form, port: event.target.value })} /></label></div>
-        <label className="ssh-field">私钥路径<span className="ssh-optional">可选</span><input autoComplete="off" placeholder="~/.ssh/id_ed25519" value={form.identityFile} disabled={busy || connecting} onChange={event => setForm({ ...form, identityFile: event.target.value })} /></label>
+        <div className="ssh-intro"><SshIcon size={30} /><h2>连接你的远端机器</h2><p>使用已有密钥连接，或在页面配置免密登录后授权当前会话。</p></div>
+        {profiles.length > 0 && <label className="ssh-field">已保存的连接<select aria-label="已保存的连接" value="" disabled={busy || connecting || setupRunning} onChange={event => { const row = profiles[Number(event.target.value)]; if (row) setForm({ ...emptyConnection, ...row }); }}><option value="" disabled>选择一个连接</option>{profiles.map((row, index) => <option key={index} value={index}>{row.user ? `${row.user}@` : ''}{row.host}{row.port ? `:${row.port}` : ''}</option>)}</select></label>}
+        <label className="ssh-field">主机 / SSH 别名<input required autoComplete="off" placeholder="例如 prod 或 192.168.1.10" value={form.host} disabled={busy || connecting || setupRunning} onChange={event => setForm({ ...form, host: event.target.value })} /></label>
+        <div className="ssh-field-row"><label className="ssh-field">用户名<input autoComplete="off" placeholder="使用 SSH 配置" value={form.user} disabled={busy || connecting || setupRunning} onChange={event => setForm({ ...form, user: event.target.value })} /></label><label className="ssh-field">端口<input inputMode="numeric" type="number" min="1" max="65535" placeholder="SSH 配置 / 22" value={form.port} disabled={busy || connecting || setupRunning} onChange={event => setForm({ ...form, port: event.target.value })} /></label></div>
+        <label className="ssh-field">私钥路径<span className="ssh-optional">可选</span><input autoComplete="off" placeholder="~/.ssh/id_ed25519" value={form.identityFile} disabled={busy || connecting || setupRunning} onChange={event => setForm({ ...form, identityFile: event.target.value })} /></label>
         <p className="ssh-hint">留空时使用本机 SSH 配置与 SSH Agent。加密私钥请先通过 ssh-add 加入 Agent。</p>
+        <PasswordlessSetupView api={api} sessionId={sessionId} connection={form} disabled={busy || connecting} onRunning={setSetupRunning}
+          onConfigured={(connection, identityFile) => { setForm({ ...emptyConnection, ...connection, port: connection.port ?? '', identityFile }); setNotice('免密登录配置成功，请保存连接信息并授权当前会话'); }} />
         <div className="ssh-auth-note"><strong>本次授权范围</strong><p>允许当前会话的 AI 和终端操作这台机器，权限与登录账号相同；撤销、会话卸载或宿主重启后失效。</p></div>
-        <button className="ssh-primary ssh-connect" type="submit" disabled={busy || connecting || state.state === 'loading' || state.state === 'unavailable'}>{busy || connecting ? '正在连接…' : '连接并授权当前会话'}</button>
-        <div className="ssh-save-actions"><button type="button" disabled={busy || connecting} onClick={save}>保存连接信息</button>{profiles.some(row => row.host === form.host && row.user === form.user && row.port === form.port) && <button type="button" disabled={busy || connecting} onClick={removeProfile}>删除已保存连接</button>}</div>
+        <button className="ssh-primary ssh-connect" type="submit" disabled={busy || connecting || setupRunning || state.state === 'loading' || state.state === 'unavailable'}>{busy || connecting ? '正在连接…' : '连接并授权当前会话'}</button>
+        <div className="ssh-save-actions"><button type="button" disabled={busy || connecting || setupRunning} onClick={save}>保存连接信息</button>{profiles.some(row => row.host === form.host && row.user === form.user && row.port === form.port) && <button type="button" disabled={busy || connecting || setupRunning} onClick={removeProfile}>删除已保存连接</button>}</div>
         {connecting && <button className="ssh-cancel" type="button" onClick={() => void api(sessionId, 'revoke').then(() => setState({ state: 'disconnected', jobs: [] })).catch(error => setError(error.message))}>取消连接</button>}
-        <details className="ssh-help"><summary>首次连接或连接失败？</summary><p>先在系统终端运行 <code>ssh 主机别名</code>，核对并信任主机指纹。插件不接受未知或变更的主机密钥，也不会自动跳过校验。</p><p>使用跳板机时，请在 ~/.ssh/config 中配置 ProxyJump。远端需提供 POSIX Shell。</p></details>
+        <details className="ssh-help"><summary>首次连接或连接失败？</summary><p>没有免密配置时，可展开上方“配置免密登录”，输入一次密码并核对主机指纹。已有密钥也可先在系统终端验证 <code>ssh 主机别名</code>；主机密钥发生变化时仍需核实处理。</p><p>使用跳板机时，请在 ~/.ssh/config 中配置 ProxyJump 并先为跳板机设置密钥认证。远端需提供 POSIX Shell。</p></details>
       </form>}
     </div>
     <footer className="ssh-footer">OpenSSH · 严格主机校验 · 会话授权</footer>

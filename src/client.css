@@ -211,6 +211,38 @@
   padding: 12px;
   margin-bottom: 16px;
 }
+.ssh-setup {
+  margin-top: 18px;
+}
+.ssh-setup-toggle {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ssh-text);
+  padding: 0;
+  font-weight: 600;
+  text-align: left;
+}
+.ssh-setup .ssh-field {
+  margin-top: 12px;
+}
+.ssh-setup-progress {
+  margin: 12px 0 6px;
+}
+.ssh-host-confirm pre,
+.ssh-key-path {
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+.ssh-host-confirm {
+  border-top: 1px solid var(--ssh-border);
+  margin-top: 12px;
+  padding-top: 12px;
+}
 .ssh-section-heading {
   display: flex;
   justify-content: space-between;

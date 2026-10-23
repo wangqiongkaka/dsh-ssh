@@ -145,3 +145,15 @@ test('终端分配失败可重试，不遗留未处理的 Promise 拒绝', async
   await assert.rejects(manager.openTerminal('a'), /PTY 分配失败/);
   assert.equal(manager.state('a').terminal, null);
 });
+
+test('撤销不等待免密配置清理就立即使令牌失效', async t => {
+  const { manager } = await fixture(t);
+  await manager.authorize('a', { host: 'prod' });
+  const token = 'a'.repeat(64); manager.current('a').token = token;
+  const original = manager.setup.cancel.bind(manager.setup), cleanup = Promise.withResolvers();
+  manager.setup.cancel = () => cleanup.promise;
+  const revoked = manager.revoke('a');
+  assert.equal(manager.sessionForToken(token), undefined);
+  await assert.rejects(manager.execute('a', { command: 'pwd' }), /尚未授权/);
+  cleanup.resolve(); await revoked; manager.setup.cancel = original;
+});

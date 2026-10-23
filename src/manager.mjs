@@ -3,14 +3,17 @@ import { mkdir, writeFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { StringDecoder } from 'node:string_decoder';
 import { connectionOf, sshArgs, quote, OutputBuffer, spawnCommand, requireText, jobView } from './ssh.mjs';
+import { PasswordlessSetup } from './setup.mjs';
 
 export class SshManager {
-  constructor({ root, subprocess, spawn }) {
+  constructor({ root, subprocess, spawn, keyDirectory }) {
     this.root = root; this.subprocess = subprocess;
     this.spawn = spawn ?? ((connection, command) => spawnCommand(connection, command, subprocess, root));
     this.grants = new Map(); this.pending = new Set(); this.closed = false;
+    this.setup = new PasswordlessSetup({ root, subprocess, keyDirectory });
   }
   current(sessionId, connected = true) {
+    if (this.closed) throw new Error('插件已关闭');
     const grant = this.grants.get(sessionId);
     if (!grant || connected && grant.state !== 'connected') throw new Error('当前会话尚未授权 SSH 连接，请在侧边栏连接并授权');
     return grant;
@@ -24,6 +27,7 @@ export class SshManager {
   }
   async authorize(sessionId, input) {
     if (this.closed) throw new Error('插件已关闭');
+    if (this.setup.running(sessionId)) throw new Error('请先完成或取消免密登录配置');
     const connection = connectionOf(input);
     if (this.grants.has(sessionId)) throw new Error('请先撤销当前连接，再连接其他机器');
     const grant = { state: 'connecting', connection, jobs: new Map(), terminal: null, terminalEpoch: 0, pendingTerminals: new Set() };
@@ -51,9 +55,11 @@ export class SshManager {
   }
   async revoke(sessionId) {
     const grant = this.grants.get(sessionId);
-    if (!grant) return { state: 'disconnected' };
     this.grants.delete(sessionId);
+    const cancellation = this.setup.cancel(sessionId);
+    if (!grant) { await cancellation; return { state: 'disconnected' }; }
     const results = await Promise.allSettled([
+      cancellation,
       ...(grant.probe ? [grant.probe.stop()] : []), ...[...grant.jobs.values()].map(job => job.stop()),
       ...(grant.terminal ? [grant.terminal.handle.terminate()] : []), ...grant.pendingTerminals,
       ...(grant.credentialFile ? [rm(grant.credentialFile, { force: true })] : []),
@@ -156,12 +162,13 @@ export class SshManager {
     return file;
   }
   sessionForToken(token) {
+    if (this.closed) return;
     if (typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token)) return;
     for (const [sessionId, grant] of this.grants) if (grant.token === token && grant.state === 'connected') return sessionId;
   }
   async close() {
     this.closed = true;
-    const results = await Promise.allSettled([...this.grants.keys()].map(id => this.revoke(id)));
+    const results = await Promise.allSettled([this.setup.close(), ...[...this.grants.keys()].map(id => this.revoke(id))]);
     await Promise.allSettled(this.pending);
     if (results.some(result => result.status === 'rejected')) throw new Error('部分 SSH 连接未能清理，请检查远端进程');
   }
