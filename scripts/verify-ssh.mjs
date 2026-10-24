@@ -44,6 +44,11 @@ try {
   bridge = new SshBridge(manager); await bridge.start();
   const authorized = await manager.authorize('live-session', { host: 'ssh-fixture' });
   assert.equal(authorized.state, 'connected');
+  const resources = await manager.resources({ host: 'ssh-fixture' });
+  assert.equal(resources.os, process.platform === 'darwin' ? 'Darwin' : 'Linux');
+  if (resources.os === 'Linux') assert.ok(resources.memory.totalBytes > 0);
+  else assert.equal(resources.unsupported, true);
+  assert.equal(manager.state('live-session').connection.host, 'ssh-fixture');
   const file = await manager.credential('live-session', bridge.endpoint);
   const cli = (action, input) => new Promise((resolve, reject) => {
     const child = spawn(process.execPath, ['src/ssh-cli.mjs', file, action, JSON.stringify(input)], { stdio: ['ignore', 'pipe', 'pipe'] });

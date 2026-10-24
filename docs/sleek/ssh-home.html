@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>首页</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@100;200;300;400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;200;300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"></script>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --color-background: var(--background);
+        --color-foreground: var(--foreground);
+        --color-primary: var(--primary);
+        --color-primary-foreground: var(--primary-foreground);
+        --color-secondary: var(--secondary);
+        --color-secondary-foreground: var(--secondary-foreground);
+        --color-muted: var(--muted);
+        --color-muted-foreground: var(--muted-foreground);
+        --color-accent: var(--accent);
+        --color-accent-foreground: var(--accent-foreground);
+        --color-destructive: var(--destructive);
+        --color-destructive-foreground: var(--destructive-foreground);
+        --color-card: var(--card);
+        --color-card-foreground: var(--card-foreground);
+        --color-popover: var(--popover);
+        --color-popover-foreground: var(--popover-foreground);
+        --color-border: var(--border);
+        --color-input: var(--input);
+        --color-ring: var(--ring);
+        --color-chart-1: var(--chart-1);
+        --color-chart-2: var(--chart-2);
+        --color-chart-3: var(--chart-3);
+        --color-chart-4: var(--chart-4);
+        --color-chart-5: var(--chart-5);
+
+        --font-sans: var(--font-sans);
+        --font-heading: var(--font-heading, var(--font-sans));
+        --font-serif: var(--font-serif);
+        --font-mono: var(--font-mono);
+      }
+
+      @theme {
+        --radius-xs: calc(var(--radius) - 8px);
+        --radius-sm: calc(var(--radius) - 4px);
+        --radius-md: calc(var(--radius) - 2px);
+        --radius-lg: var(--radius);
+        --radius-xl: calc(var(--radius) + 4px);
+        --radius-2xl: calc(var(--radius) + 8px);
+        --radius-3xl: calc(var(--radius) + 16px);
+        --radius-4xl: calc(var(--radius) + 24px);
+      }
+
+      * {
+        corner-shape: var(--shape, round);
+      }
+
+      .rounded-full,
+      .rounded-none,
+      .rounded-t-full,
+      .rounded-t-none,
+      .rounded-r-full,
+      .rounded-r-none,
+      .rounded-b-full,
+      .rounded-b-none,
+      .rounded-l-full,
+      .rounded-l-none,
+      .rounded-s-full,
+      .rounded-s-none,
+      .rounded-e-full,
+      .rounded-e-none,
+      .rounded-tl-full,
+      .rounded-tl-none,
+      .rounded-tr-full,
+      .rounded-tr-none,
+      .rounded-bl-full,
+      .rounded-bl-none,
+      .rounded-br-full,
+      .rounded-br-none,
+      .rounded-ss-full,
+      .rounded-ss-none,
+      .rounded-se-full,
+      .rounded-se-none,
+      .rounded-es-full,
+      .rounded-es-none,
+      .rounded-ee-full,
+      .rounded-ee-none {
+        corner-shape: round;
+      }
+
+      @utility rounded-* {
+        border-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-t-* {
+        border-top-left-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+        border-top-right-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-r-* {
+        border-top-right-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+        border-bottom-right-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-b-* {
+        border-bottom-right-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+        border-bottom-left-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-l-* {
+        border-top-left-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+        border-bottom-left-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-tl-* {
+        border-top-left-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-tr-* {
+        border-top-right-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-bl-* {
+        border-bottom-left-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-br-* {
+        border-bottom-right-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-s-* {
+        border-start-start-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+        border-end-start-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-e-* {
+        border-start-end-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+        border-end-end-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-ss-* {
+        border-start-start-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-se-* {
+        border-start-end-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-es-* {
+        border-end-start-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-ee-* {
+        border-end-end-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+
+      @layer base {
+        * {
+          @apply border-border outline-ring/50;
+        }
+        body {
+          @apply bg-background text-foreground font-sans;
+        }
+      }
+
+      :root {
+        --shape: squircle;
+        --shape-multiplier: 1;
+
+        --background: #0f1113;
+        --foreground: #e8eaed;
+        --primary: #4da3ff;
+        --primary-foreground: #06111f;
+        --secondary: #23272c;
+        --secondary-foreground: #e3e6ea;
+        --muted: #1e2227;
+        --muted-foreground: #9aa1a9;
+        --accent: #1e2b3a;
+        --accent-foreground: #9ccbff;
+        --destructive: #f0883e;
+        --destructive-foreground: #1a0e04;
+        --card: #171a1d;
+        --card-foreground: #e8eaed;
+        --popover: #1c2024;
+        --popover-foreground: #e8eaed;
+        --border: #2a2e33;
+        --input: #14161a;
+        --ring: #4da3ff;
+        --chart-1: #4da3ff;
+        --chart-2: #3fb950;
+        --chart-3: #f0883e;
+        --chart-4: #56c6c6;
+        --chart-5: #7d8590;
+
+        --font-sans: "Noto Sans SC", sans-serif;
+        --font-heading: "Noto Sans SC", sans-serif;
+        --font-serif: "Playfair Display", serif;
+        --font-mono: "JetBrains Mono", monospace;
+
+        --radius: 0.875rem;
+      }
+
+      @supports (corner-shape: squircle) {
+        :root {
+          --shape-multiplier: 2.5;
+        }
+      }
+
+      /* Prevent layout shift for icons without explicit dimensions */
+      iconify-icon:not([width]):not([height]) {
+        display: inline-block;
+        width: 1em;
+        height: 1em;
+      }
+
+      /* Hide scrollbars */
+      *,
+      *::before,
+      *::after {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      *::-webkit-scrollbar {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      class="mx-auto w-full max-w-[390px] min-h-screen bg-background text-foreground px-4 pt-5 pb-8 font-sans"
+    >
+      <header class="flex items-center justify-between">
+        <h1 class="font-heading text-xl font-semibold tracking-tight">SSH 远程</h1>
+        <button
+          class="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 h-9 text-sm font-medium text-primary-foreground"
+        >
+          <iconify-icon icon="lucide:plus" width="16" height="16"></iconify-icon>新增主机
+        </button>
+      </header>
+      <section class="mt-6">
+        <p class="text-xs text-muted-foreground mb-2">当前会话授权</p>
+        <div class="relative rounded-2xl border border-border bg-card p-4 pl-5 overflow-hidden">
+          <span class="absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full bg-primary"></span>
+          <div class="flex items-start gap-3">
+            <div
+              class="mt-0.5 flex size-9 items-center justify-center rounded-xl bg-accent text-accent-foreground"
+            >
+              <iconify-icon icon="lucide:shield-check" width="20" height="20"></iconify-icon>
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-medium">已授权：生产环境</p>
+              <p class="mt-0.5 font-mono text-xs text-muted-foreground">
+                deploy@prod.example.com:22
+              </p>
+              <p class="mt-2 text-xs leading-relaxed text-muted-foreground">
+                仅当前会话有效，AI 可在此主机上执行命令。
+              </p>
+            </div>
+          </div>
+          <div class="mt-4 grid grid-cols-2 gap-2">
+            <button
+              class="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-primary text-sm font-medium text-primary-foreground"
+            >
+              <iconify-icon icon="lucide:message-square" width="16" height="16"></iconify-icon
+              >通知当前会话 AI</button
+            ><button
+              class="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-border bg-secondary text-sm font-medium text-secondary-foreground"
+            >
+              <iconify-icon icon="lucide:unlink" width="16" height="16"></iconify-icon>撤销授权
+            </button>
+          </div>
+        </div>
+      </section>
+      <section class="mt-7">
+        <div class="mb-2 flex items-center justify-between">
+          <h2 class="font-heading text-base font-semibold">已保存主机</h2>
+          <span class="font-mono text-xs text-muted-foreground">2 台</span>
+        </div>
+        <div class="space-y-3">
+          <article class="rounded-2xl border border-border bg-card p-4">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="size-2 rounded-full bg-chart-2 ring-4 ring-chart-2/15"></span>
+                  <h3 class="truncate text-sm font-semibold">生产环境</h3>
+                </div>
+                <p class="mt-1 font-mono text-xs text-muted-foreground">prod.example.com</p>
+              </div>
+              <span
+                class="inline-flex items-center gap-1 rounded-md bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground"
+                ><iconify-icon icon="lucide:check" width="12" height="12"></iconify-icon
+                >授权中</span
+              >
+            </div>
+            <div class="mt-4 grid grid-cols-3 gap-2">
+              <div class="rounded-xl bg-muted p-2.5">
+                <p class="text-[11px] text-muted-foreground">CPU</p>
+                <p class="mt-1 font-mono text-sm font-semibold">42%</p>
+                <p class="font-mono text-[10px] text-muted-foreground">8 核</p>
+              </div>
+              <div class="rounded-xl bg-muted p-2.5">
+                <p class="text-[11px] text-muted-foreground">内存</p>
+                <p class="mt-1 font-mono text-sm font-semibold">63%</p>
+                <p class="font-mono text-[10px] text-muted-foreground">9.8/16 GB</p>
+              </div>
+              <div class="rounded-xl bg-muted p-2.5">
+                <p class="text-[11px] text-muted-foreground">根磁盘</p>
+                <p class="mt-1 font-mono text-sm font-semibold">71%</p>
+                <p class="font-mono text-[10px] text-muted-foreground">142/200 GB</p>
+              </div>
+            </div>
+            <div class="mt-3 space-y-2">
+              <div class="h-1 rounded-full bg-muted">
+                <div class="h-1 w-[42%] rounded-full bg-chart-1"></div>
+              </div>
+              <div class="h-1 rounded-full bg-muted">
+                <div class="h-1 w-[63%] rounded-full bg-chart-1"></div>
+              </div>
+              <div class="h-1 rounded-full bg-muted">
+                <div class="h-1 w-[71%] rounded-full bg-chart-1"></div>
+              </div>
+            </div>
+            <p class="mt-3 font-mono text-[11px] text-muted-foreground">
+              deploy@prod.example.com:22
+            </p>
+          </article>
+          <article class="rounded-2xl border border-border bg-card p-4">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <span
+                    class="size-2 rounded-full bg-destructive ring-4 ring-destructive/15"
+                  ></span>
+                  <h3 class="truncate text-sm font-semibold">测试环境</h3>
+                </div>
+                <p class="mt-1 font-mono text-xs text-muted-foreground">staging.example.com</p>
+              </div>
+              <span
+                class="rounded-md border border-destructive/40 px-2 py-0.5 text-[11px] font-medium text-destructive"
+                >认证失败</span
+              >
+            </div>
+            <div class="mt-4 grid grid-cols-3 gap-2">
+              <div class="rounded-xl bg-muted p-2.5">
+                <p class="text-[11px] text-muted-foreground">CPU</p>
+                <p class="mt-1 font-mono text-sm font-semibold text-muted-foreground">--</p>
+                <p class="font-mono text-[10px] text-muted-foreground">4 核</p>
+              </div>
+              <div class="rounded-xl bg-muted p-2.5">
+                <p class="text-[11px] text-muted-foreground">内存</p>
+                <p class="mt-1 font-mono text-sm font-semibold text-muted-foreground">--</p>
+                <p class="font-mono text-[10px] text-muted-foreground">-- / 8 GB</p>
+              </div>
+              <div class="rounded-xl bg-muted p-2.5">
+                <p class="text-[11px] text-muted-foreground">根磁盘</p>
+                <p class="mt-1 font-mono text-sm font-semibold text-muted-foreground">--</p>
+                <p class="font-mono text-[10px] text-muted-foreground">-- / 80 GB</p>
+              </div>
+            </div>
+            <div class="mt-4 flex items-center justify-between gap-2">
+              <p class="font-mono text-[11px] text-muted-foreground">root@staging.example.com:22</p>
+              <button
+                class="inline-flex h-8 items-center gap-1 rounded-lg border border-border bg-secondary px-2.5 text-xs font-medium text-secondary-foreground"
+              >
+                <iconify-icon icon="lucide:refresh-cw" width="14" height="14"></iconify-icon
+                >重新认证
+              </button>
+            </div>
+          </article>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

@@ -21,10 +21,8 @@ export async function apply(ctx) {
   await bridge.start();
   ctx.on('session/disposed', session => manager.revoke(session.id));
   const methods = { ...aiMethods, authorize: 'authorize', revoke: 'revoke',
-    'setup.start': (sessionId, input) => {
-      if (manager.state(sessionId).state !== 'disconnected') throw new Error('请先撤销当前连接，再配置免密登录');
-      return manager.setup.start(sessionId, input);
-    },
+    resources: (_sessionId, input) => manager.resources(input),
+    'setup.start': (sessionId, input) => manager.setup.start(sessionId, input),
     'setup.state': sessionId => manager.setup.state(sessionId),
     'setup.confirm': (sessionId, input) => manager.setup.confirm(sessionId, input),
     'setup.cancel': sessionId => manager.setup.cancel(sessionId),
@@ -32,7 +30,7 @@ export async function apply(ctx) {
     'terminal.resize': 'terminalResize', 'terminal.close': 'terminalClose',
     instructions: async sessionId => {
       const file = await manager.credential(sessionId, bridge.endpoint);
-      const command = `${quote(process.execPath)} ${quote(fileURLToPath(new URL('./ssh-cli.mjs', import.meta.url)))} ${quote(file)}`;
+      const command = `ELECTRON_RUN_AS_NODE=1 ${quote(process.execPath)} ${quote(fileURLToPath(new URL('./ssh-cli.mjs', import.meta.url)))} ${quote(file)}`;
       const state = manager.state(sessionId);
       return { text: `当前会话已获准通过 SSH 操作 ${state.connection.host}（${state.connection.user || 'SSH 配置中的用户'}）。权限与远端账号相同，可执行任意远程 Shell 命令。此授权仅用于当前会话和当前机器，禁止读取、打印或复制会话凭据文件。\n原生 DSH 优先使用 ssh_exec / ssh_read / ssh_stop / ssh_status 工具。Codex / Claude Code 使用以下本机命令：\n${command} exec '{"command":"pwd","waitMs":1000}'\n命令未结束时返回 running:true 和 id；用 ${command} read '{"id":"返回的命令 ID","offset":0}' 读取，之后沿用返回的 offset；停止用 stop '{"id":"命令 ID"}'。cwd 参数表示远端工作目录。每次 exec 是独立 Shell，跨命令请传 cwd 或写成同一条命令。\n遇到 outcomeUnknown:true、断线或超时，不得宣称成功或自动重试写操作。授权撤销或宿主重启后必须由用户重新授权。` };
     },

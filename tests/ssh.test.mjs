@@ -63,3 +63,15 @@ test('拒绝跨站请求、非 JSON、超大正文和非对象正文', async () 
   await assert.rejects(readJson(request('{"long":"123456"}'), 5));
   assert.deepEqual(await readJson(request('{"command":"pwd"}')), { command: 'pwd' });
 });
+
+test('宿主桥接使用内部 URL 时，按已验证的 Host 校验 Origin', () => {
+  const request = (origin, host = '127.0.0.1:52525', extra = {}) => new Request('http://dsh.internal/api/dsh-ssh/status', {
+    method: 'POST', headers: { host, origin, 'content-type': 'application/json', ...extra }, body: '{}',
+  });
+  assert.doesNotThrow(() => requireSameOrigin(request('http://127.0.0.1:52525')));
+  assert.doesNotThrow(() => requireSameOrigin(request('https://dsh.example.com', 'dsh.example.com')));
+  for (const origin of ['http://evil.invalid', 'http://127.0.0.1:52526', 'null', 'file://127.0.0.1:52525', 'http://127.0.0.1:52525/path']) {
+    assert.throws(() => requireSameOrigin(request(origin)));
+  }
+  assert.throws(() => requireSameOrigin(request('http://127.0.0.1:52525', undefined, { 'sec-fetch-site': 'cross-site' })));
+});

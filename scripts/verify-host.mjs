@@ -25,7 +25,8 @@ const ctx = {
     const stdout = new PassThrough(), stderr = new PassThrough(), deferred = Promise.withResolvers();
     queueMicrotask(() => {
       const command = spec.argv.at(-1);
-      stdout.end(command.includes('DSH_SSH_READY') ? 'DSH_SSH_READY\ndeploy\nfixture\n/home/deploy\n' : 'host tool result\n');
+      stdout.end(command.includes('DSH_SSH_READY') ? 'DSH_SSH_READY\ndeploy\nfixture\n/home/deploy\n'
+        : command.includes('DSH_HOST_RESOURCES_V1') ? 'DSH_HOST_RESOURCES_V1\nos Linux\nhostname fixture\ncores 2\ncpu 10\nmemory 1024 768\ndisk 4096 1024 3000\nuptime 123\n' : 'host tool result\n');
       stderr.end(); deferred.resolve({ exitCode: 0, signal: null });
     });
     return { stdout, stderr, done: deferred.promise, terminate: () => { terminations++; }, waitForExit: async () => true };
@@ -34,10 +35,16 @@ const ctx = {
 try {
   await apply(ctx);
   assert.deepEqual([...definitions.keys()].sort(), ['ssh_exec', 'ssh_read', 'ssh_status', 'ssh_stop']);
-  const request = (action, input, headers = {}) => routes.get(`/api/dsh-ssh/${action}`).fetch(new Request(`http://127.0.0.1:1234/api/dsh-ssh/${action}`, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(input) }));
+  const request = (action, input, headers = {}) => routes.get(`/api/dsh-ssh/${action}`).fetch(new Request(`http://dsh.internal/api/dsh-ssh/${action}`, { method: 'POST', headers: { host: '127.0.0.1:1234', origin: 'http://127.0.0.1:1234', 'content-type': 'application/json', ...headers }, body: JSON.stringify(input) }));
   assert.equal((await request('authorize', { sessionId: 'missing', host: 'prod' })).status, 400);
   assert.equal((await request('authorize', { sessionId: 'a', host: 'prod' }, { origin: 'http://evil.invalid' })).status, 400);
+  const resources = await (await request('resources', { sessionId: 'a', host: 'saved' })).json();
+  assert.equal(resources.value.cores, 2);
+  assert.equal((await (await request('status', { sessionId: 'a' })).json()).value.state, 'disconnected');
   assert.equal((await request('authorize', { sessionId: 'a', host: 'prod' })).status, 200);
+  assert.equal((await request('setup.start', { sessionId: 'a', host: 'another', password: 'fixture-only' })).status, 200);
+  assert.equal((await (await request('status', { sessionId: 'a' })).json()).value.connection.host, 'prod');
+  await request('setup.cancel', { sessionId: 'a' });
   const execution = id => ({ agent: { id }, signal: new AbortController().signal });
   const output = JSON.parse(await definitions.get('ssh_exec').execute({ command: 'pwd', waitMs: 1000 }, execution('a')));
   assert.equal(output.output, 'host tool result\n');
@@ -46,6 +53,7 @@ try {
   assert.equal(JSON.parse(await definitions.get('ssh_read').execute({ id: output.id, offset: 0 }, execution('a'))).output, output.output);
   const instructions = await (await request('instructions', { sessionId: 'a' })).json();
   assert.ok(instructions.value.text.includes('ssh-cli.mjs'));
+  assert.ok(instructions.value.text.includes('ELECTRON_RUN_AS_NODE=1'));
   assert.doesNotMatch(instructions.value.text, /[a-f0-9]{64}/);
   await events.get('session/disposed')({ id: 'a' });
   await assert.rejects(definitions.get('ssh_exec').execute({ command: 'pwd' }, execution('a')), /尚未授权/);

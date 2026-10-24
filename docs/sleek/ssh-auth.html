@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>新增主机认证</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@100;200;300;400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;200;300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"></script>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --color-background: var(--background);
+        --color-foreground: var(--foreground);
+        --color-primary: var(--primary);
+        --color-primary-foreground: var(--primary-foreground);
+        --color-secondary: var(--secondary);
+        --color-secondary-foreground: var(--secondary-foreground);
+        --color-muted: var(--muted);
+        --color-muted-foreground: var(--muted-foreground);
+        --color-accent: var(--accent);
+        --color-accent-foreground: var(--accent-foreground);
+        --color-destructive: var(--destructive);
+        --color-destructive-foreground: var(--destructive-foreground);
+        --color-card: var(--card);
+        --color-card-foreground: var(--card-foreground);
+        --color-popover: var(--popover);
+        --color-popover-foreground: var(--popover-foreground);
+        --color-border: var(--border);
+        --color-input: var(--input);
+        --color-ring: var(--ring);
+        --color-chart-1: var(--chart-1);
+        --color-chart-2: var(--chart-2);
+        --color-chart-3: var(--chart-3);
+        --color-chart-4: var(--chart-4);
+        --color-chart-5: var(--chart-5);
+
+        --font-sans: var(--font-sans);
+        --font-heading: var(--font-heading, var(--font-sans));
+        --font-serif: var(--font-serif);
+        --font-mono: var(--font-mono);
+      }
+
+      @theme {
+        --radius-xs: calc(var(--radius) - 8px);
+        --radius-sm: calc(var(--radius) - 4px);
+        --radius-md: calc(var(--radius) - 2px);
+        --radius-lg: var(--radius);
+        --radius-xl: calc(var(--radius) + 4px);
+        --radius-2xl: calc(var(--radius) + 8px);
+        --radius-3xl: calc(var(--radius) + 16px);
+        --radius-4xl: calc(var(--radius) + 24px);
+      }
+
+      * {
+        corner-shape: var(--shape, round);
+      }
+
+      .rounded-full,
+      .rounded-none,
+      .rounded-t-full,
+      .rounded-t-none,
+      .rounded-r-full,
+      .rounded-r-none,
+      .rounded-b-full,
+      .rounded-b-none,
+      .rounded-l-full,
+      .rounded-l-none,
+      .rounded-s-full,
+      .rounded-s-none,
+      .rounded-e-full,
+      .rounded-e-none,
+      .rounded-tl-full,
+      .rounded-tl-none,
+      .rounded-tr-full,
+      .rounded-tr-none,
+      .rounded-bl-full,
+      .rounded-bl-none,
+      .rounded-br-full,
+      .rounded-br-none,
+      .rounded-ss-full,
+      .rounded-ss-none,
+      .rounded-se-full,
+      .rounded-se-none,
+      .rounded-es-full,
+      .rounded-es-none,
+      .rounded-ee-full,
+      .rounded-ee-none {
+        corner-shape: round;
+      }
+
+      @utility rounded-* {
+        border-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-t-* {
+        border-top-left-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+        border-top-right-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-r-* {
+        border-top-right-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+        border-bottom-right-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-b-* {
+        border-bottom-right-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+        border-bottom-left-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-l-* {
+        border-top-left-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+        border-bottom-left-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-tl-* {
+        border-top-left-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-tr-* {
+        border-top-right-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-bl-* {
+        border-bottom-left-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-br-* {
+        border-bottom-right-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-s-* {
+        border-start-start-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+        border-end-start-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-e-* {
+        border-start-end-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+        border-end-end-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-ss-* {
+        border-start-start-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-se-* {
+        border-start-end-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-es-* {
+        border-end-start-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+      @utility rounded-ee-* {
+        border-end-end-radius: calc(
+          --value(--radius-*, [length], [percentage]) * var(--shape-multiplier, 1)
+        );
+      }
+
+      @layer base {
+        * {
+          @apply border-border outline-ring/50;
+        }
+        body {
+          @apply bg-background text-foreground font-sans;
+        }
+      }
+
+      :root {
+        --shape: squircle;
+        --shape-multiplier: 1;
+
+        --background: #0f1113;
+        --foreground: #e8eaed;
+        --primary: #4da3ff;
+        --primary-foreground: #06111f;
+        --secondary: #23272c;
+        --secondary-foreground: #e3e6ea;
+        --muted: #1e2227;
+        --muted-foreground: #9aa1a9;
+        --accent: #1e2b3a;
+        --accent-foreground: #9ccbff;
+        --destructive: #f0883e;
+        --destructive-foreground: #1a0e04;
+        --card: #171a1d;
+        --card-foreground: #e8eaed;
+        --popover: #1c2024;
+        --popover-foreground: #e8eaed;
+        --border: #2a2e33;
+        --input: #14161a;
+        --ring: #4da3ff;
+        --chart-1: #4da3ff;
+        --chart-2: #3fb950;
+        --chart-3: #f0883e;
+        --chart-4: #56c6c6;
+        --chart-5: #7d8590;
+
+        --font-sans: "Noto Sans SC", sans-serif;
+        --font-heading: "Noto Sans SC", sans-serif;
+        --font-serif: "Playfair Display", serif;
+        --font-mono: "JetBrains Mono", monospace;
+
+        --radius: 0.875rem;
+      }
+
+      @supports (corner-shape: squircle) {
+        :root {
+          --shape-multiplier: 2.5;
+        }
+      }
+
+      /* Prevent layout shift for icons without explicit dimensions */
+      iconify-icon:not([width]):not([height]) {
+        display: inline-block;
+        width: 1em;
+        height: 1em;
+      }
+
+      /* Hide scrollbars */
+      *,
+      *::before,
+      *::after {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      *::-webkit-scrollbar {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      class="mx-auto w-full max-w-[390px] min-h-screen bg-background text-foreground px-4 pt-4 pb-8 font-sans"
+    >
+      <header class="flex items-center gap-3">
+        <button
+          class="flex size-9 items-center justify-center rounded-xl border border-border bg-card text-foreground"
+          aria-label="返回"
+        >
+          <iconify-icon icon="lucide:arrow-left" width="16" height="16"></iconify-icon>
+        </button>
+        <h1 class="font-heading text-lg font-semibold tracking-tight">主机认证</h1>
+      </header>
+      <form class="mt-6 space-y-5">
+        <section class="rounded-2xl border border-border bg-card p-4 space-y-4">
+          <div class="space-y-1.5">
+            <label class="text-xs font-medium text-muted-foreground"
+              >主机名称 <span class="text-muted-foreground/70">（可选）</span></label
+            ><input
+              type="text"
+              class="h-11 w-full rounded-xl border border-border bg-input px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="例如：生产环境"
+            />
+          </div>
+          <div class="space-y-1.5">
+            <label class="text-xs font-medium text-muted-foreground">主机地址</label
+            ><input
+              type="text"
+              class="h-11 w-full rounded-xl border border-border bg-input px-3 font-mono text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              value="prod.example.com"
+            />
+          </div>
+          <div class="grid grid-cols-[1fr_96px] gap-3">
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-muted-foreground">用户名</label
+              ><input
+                type="text"
+                class="h-11 w-full rounded-xl border border-border bg-input px-3 font-mono text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                value="deploy"
+              />
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-muted-foreground">端口</label
+              ><input
+                type="text"
+                class="h-11 w-full rounded-xl border border-border bg-input px-3 font-mono text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                inputmode="numeric"
+                value="22"
+              />
+            </div>
+          </div>
+        </section>
+        <section class="space-y-3">
+          <p class="text-xs font-medium text-muted-foreground">认证方式</p>
+          <div role="tablist" class="grid grid-cols-2 gap-1 rounded-xl bg-muted p-1">
+            <button
+              role="tab"
+              type="button"
+              class="h-9 rounded-lg bg-secondary text-sm font-medium text-foreground border border-border"
+              aria-selected
+            >
+              密码配置</button
+            ><button
+              role="tab"
+              type="button"
+              class="h-9 rounded-lg text-sm font-medium text-muted-foreground"
+            >
+              已有密钥
+            </button>
+          </div>
+          <div class="rounded-2xl border border-border bg-card p-4 space-y-4">
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-muted-foreground">登录密码</label>
+              <div class="relative">
+                <input
+                  type="password"
+                  class="h-11 w-full rounded-xl border border-border bg-input pl-3 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  value="examplepass"
+                /><iconify-icon
+                  icon="lucide:eye"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  width="16"
+                  height="16"
+                ></iconify-icon>
+              </div>
+              <p class="flex items-start gap-1.5 text-xs leading-relaxed text-muted-foreground">
+                <iconify-icon
+                  icon="lucide:lock"
+                  class="mt-0.5 shrink-0"
+                  width="14"
+                  height="14"
+                ></iconify-icon
+                >密码仅用于本次配置，不会被保存。DSH 将在运行 DSH
+                的主机上生成专用密钥，并追加公钥到目标主机。
+              </p>
+            </div>
+            <div class="rounded-xl border border-destructive/40 bg-muted p-3 space-y-3">
+              <div class="flex items-start gap-2">
+                <iconify-icon
+                  icon="lucide:shield-alert"
+                  class="mt-0.5 shrink-0 text-destructive"
+                  width="16"
+                  height="16"
+                ></iconify-icon>
+                <div class="min-w-0">
+                  <p class="text-sm font-medium">首次连接，请确认主机指纹</p>
+                  <p
+                    class="mt-1 break-all font-mono text-[11px] leading-relaxed text-muted-foreground"
+                  >
+                    SHA256:q3Xk7vR1nP0sLw2aYc9fTg4hJb8dE6uZmN5iOiKoWsA
+                  </p>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  class="h-9 rounded-lg border border-border bg-secondary text-sm font-medium text-secondary-foreground"
+                >
+                  拒绝</button
+                ><button
+                  type="button"
+                  class="h-9 rounded-lg bg-primary text-sm font-medium text-primary-foreground"
+                >
+                  信任并继续
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="space-y-3">
+          <div class="flex items-start gap-2 rounded-xl border border-destructive/40 bg-muted p-3">
+            <iconify-icon
+              icon="lucide:circle-alert"
+              class="mt-0.5 shrink-0 text-destructive"
+              width="16"
+              height="16"
+            ></iconify-icon>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-medium text-destructive">连接超时</p>
+              <p class="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                请检查主机地址与端口后重试，配置不会被保存。
+              </p>
+            </div>
+            <button
+              type="button"
+              class="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border border-border bg-secondary px-2.5 text-xs font-medium text-secondary-foreground"
+            >
+              <iconify-icon icon="lucide:rotate-ccw" width="14" height="14"></iconify-icon>重试
+            </button>
+          </div>
+          <button
+            type="submit"
+            class="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground"
+          >
+            <iconify-icon icon="lucide:badge-check" width="16" height="16"></iconify-icon
+            >验证并保存主机
+          </button>
+          <p class="text-center text-xs leading-relaxed text-muted-foreground">
+            保存成功后将返回首页并开始采集资源，不会自动授权给 AI。
+          </p>
+        </section>
+      </form>
+    </div>
+  </body>
+</html>

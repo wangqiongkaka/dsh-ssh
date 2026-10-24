@@ -4,12 +4,14 @@ import { join } from 'node:path';
 import { StringDecoder } from 'node:string_decoder';
 import { connectionOf, sshArgs, quote, OutputBuffer, spawnCommand, requireText, jobView } from './ssh.mjs';
 import { PasswordlessSetup } from './setup.mjs';
+import { resourceCommand, parseResources } from './resources.mjs';
 
 export class SshManager {
   constructor({ root, subprocess, spawn, keyDirectory }) {
     this.root = root; this.subprocess = subprocess;
     this.spawn = spawn ?? ((connection, command) => spawnCommand(connection, command, subprocess, root));
     this.grants = new Map(); this.pending = new Set(); this.closed = false;
+    this.resourceChecks = new Map();
     this.setup = new PasswordlessSetup({ root, subprocess, keyDirectory });
   }
   current(sessionId, connected = true) {
@@ -24,6 +26,28 @@ export class SshManager {
       terminal: grant.terminal ? { running: grant.terminal.running, exitCode: grant.terminal.exitCode } : null,
       jobs: [...grant.jobs.values()].map(job => ({ id: job.id, running: job.running, exitCode: job.exitCode })) }
       : { state: 'disconnected', jobs: [], terminal: null };
+  }
+  async resources(input) {
+    if (this.closed) throw new Error('插件已关闭');
+    const connection = connectionOf(input), key = JSON.stringify(connection);
+    const existing = this.resourceChecks.get(key);
+    if (existing) return existing.work;
+    if (this.resourceChecks.size >= 4) throw new Error('资源采集中，请稍后重试');
+    const job = this.spawn(connection, resourceCommand);
+    const check = { job };
+    check.work = (async () => {
+      let timedOut = false;
+      const timer = setTimeout(() => { timedOut = true; void job.stop().catch(() => {}); }, 20000);
+      try {
+        await job.done;
+        if (this.closed) throw new Error('插件已关闭');
+        if (timedOut) throw new Error('资源查询超时，请检查主机连接');
+        if (job.exitCode !== 0) throw new Error('无法连接主机，请检查密钥认证和网络' + (job.error || job.buffer.text ? '：' + (job.error || job.buffer.text).slice(-1500).trim() : ''));
+        return { ...parseResources(job.buffer.text), collectedAt: Date.now() };
+      } finally { clearTimeout(timer); }
+    })();
+    this.resourceChecks.set(key, check);
+    try { return await check.work; } finally { if (this.resourceChecks.get(key) === check) this.resourceChecks.delete(key); }
   }
   async authorize(sessionId, input) {
     if (this.closed) throw new Error('插件已关闭');
@@ -168,7 +192,8 @@ export class SshManager {
   }
   async close() {
     this.closed = true;
-    const results = await Promise.allSettled([this.setup.close(), ...[...this.grants.keys()].map(id => this.revoke(id))]);
+    const results = await Promise.allSettled([this.setup.close(), ...[...this.grants.keys()].map(id => this.revoke(id)), ...[...this.resourceChecks.values()].map(check => check.job.stop())]);
+    await Promise.allSettled([...this.resourceChecks.values()].map(check => check.work));
     await Promise.allSettled(this.pending);
     if (results.some(result => result.status === 'rejected')) throw new Error('部分 SSH 连接未能清理，请检查远端进程');
   }

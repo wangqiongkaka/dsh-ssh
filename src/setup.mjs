@@ -38,7 +38,7 @@ export class PasswordlessSetup {
   running(sessionId) { const record = this.records.get(sessionId); return !!record && !finished.has(record.phase); }
   state(sessionId) {
     const record = this.records.get(sessionId);
-    return record ? { id: record.id, phase: record.phase, running: this.running(sessionId), connection: record.connection,
+    return record ? { id: record.id, phase: record.phase, authMode: record.authMode, running: this.running(sessionId), connection: record.connection,
       identityFile: record.identityFile, fingerprint: record.fingerprint, hostPrompt: record.hostPrompt,
       error: record.error, mayHaveInstalledKey: record.mayHaveInstalledKey } : { phase: 'idle', running: false };
   }
@@ -48,8 +48,11 @@ export class PasswordlessSetup {
     if (this.running(sessionId)) throw new Error('当前会话正在配置免密登录');
     if ([...this.records.keys()].filter(id => this.running(id)).length >= 4) throw new Error('最多同时配置 4 台机器');
     const connection = connectionOf(input);
-    if (typeof input.password !== 'string' || !input.password.length || input.password.length > 4096 || /[\0\r\n]/.test(input.password)) throw new Error('请输入有效的首次登录密码，密码不能包含换行');
-    const record = { id: randomUUID(), phase: 'preparing', connection, password: input.password, controller: new AbortController(), mayHaveInstalledKey: false };
+    const authMode = input.authMode ?? 'password';
+    if (!['password', 'key'].includes(authMode)) throw new Error('认证方式无效');
+    if (authMode === 'password' && (typeof input.password !== 'string' || !input.password.length || input.password.length > 4096 || /[\0\r\n]/.test(input.password))) throw new Error('请输入有效的首次登录密码，密码不能包含换行');
+    if (authMode === 'key' && input.password) throw new Error('已有密钥认证不需要密码');
+    const record = { id: randomUUID(), phase: 'preparing', authMode, connection, password: authMode === 'password' ? input.password : '', controller: new AbortController(), mayHaveInstalledKey: false };
     this.records.set(sessionId, record);
     record.done = this.configure(record).catch(() => { record.password = ''; record.phase = 'error'; record.error = '配置可能已完成，但临时资源清理失败，请检查远端公钥和本机临时目录'; });
     return this.state(sessionId);
@@ -67,7 +70,7 @@ export class PasswordlessSetup {
       const diagnostic = child.collected.stderr.readFrom(0).text;
       if (outcome.exitCode !== 0) {
         if (record.promptError) throw new Error(record.promptError);
-        if (/Permission denied|Authentication failed/i.test(diagnostic)) throw new Error('首次认证失败，请检查用户名、密码及远端是否允许密码认证');
+        if (/Permission denied|Authentication failed/i.test(diagnostic)) throw new Error(record.authMode === 'key' ? '密钥认证失败，请检查私钥、SSH Agent 及远端公钥配置' : '首次认证失败，请检查用户名、密码及远端是否允许密码认证');
         if (/Host key verification failed|REMOTE HOST IDENTIFICATION HAS CHANGED/i.test(diagnostic)) throw new Error('主机密钥校验失败，请先核实远端主机身份');
         throw new Error(`${record.phase === 'verifying' ? '公钥已提交，但密钥登录验证失败，请检查服务器公钥认证配置' : '配置命令执行失败，请检查连接、密钥路径权限及远端 SSH 配置'}（退出码 ${outcome.exitCode ?? '未知'}）`);
       }
@@ -97,7 +100,7 @@ export class PasswordlessSetup {
   }
   async askpass(record, request, response) {
     try {
-      if (!record.token || !['installing', 'host-key'].includes(record.phase) || request.method !== 'POST' || request.url !== '/' || request.headers.authorization !== `Bearer ${record.token}`
+      if (!record.token || !['installing', 'checking', 'host-key'].includes(record.phase) || request.method !== 'POST' || request.url !== '/' || request.headers.authorization !== `Bearer ${record.token}`
         || request.headers.origin || request.headers['sec-fetch-site'] || request.headers.host !== new URL(record.endpoint).host || record.controller.signal.aborted) {
         response.writeHead(403).end(); return;
       }
@@ -112,10 +115,10 @@ export class PasswordlessSetup {
         record.confirmation = Promise.withResolvers();
         answer = await record.confirmation.promise;
         record.confirmation = undefined; record.hostPrompt = undefined;
-        if (!record.controller.signal.aborted) record.phase = 'installing';
+        if (!record.controller.signal.aborted) record.phase = record.authMode === 'key' ? 'checking' : 'installing';
       } else {
         if (record.phase !== 'installing' || prompt.trim() !== record.passwordPrompt || !record.password || record.passwordSent) {
-          record.promptError = '认证请求与目标用户或主机不匹配；跳板机请先配置密钥认证，或重新开始配置';
+          record.promptError = record.authMode === 'key' ? '密钥无法用于非交互登录，请先通过 ssh-add 解锁私钥或检查 SSH 配置' : '认证请求与目标用户或主机不匹配；跳板机请先配置密钥认证，或重新开始配置';
           throw new Error(record.promptError);
         }
         record.passwordSent = true; answer = record.password; record.password = '';
@@ -138,7 +141,8 @@ export class PasswordlessSetup {
       const user = config.match(/^user (.+)$/m)?.[1]?.trim(), host = config.match(/^hostname (.+)$/m)?.[1]?.trim();
       if (!user || !host) throw new Error('无法解析目标 SSH 用户或主机，请检查 SSH 配置');
       record.passwordPrompt = `${user}@${host.slice(0, 100)}'s password:`;
-      const { path, publicKey } = await this.key(record); record.identityFile = path;
+      const key = record.authMode === 'key' ? { path: record.connection.identityFile } : await this.key(record);
+      const { path, publicKey } = key; record.identityFile = path;
       record.controller.signal.throwIfAborted();
       directory = await mkdtemp(join(this.root, 'setup-'));
       record.token = randomBytes(32).toString('hex');
@@ -149,8 +153,14 @@ export class PasswordlessSetup {
       const credentials = join(directory, 'askpass.json');
       await writeFile(credentials, JSON.stringify({ endpoint: record.endpoint, token: record.token }), { mode: 0o600, flag: 'wx' });
       const helper = join(directory, 'askpass');
-      await writeFile(helper, `#!/bin/sh\nexec ${quote(process.execPath)} ${quote(fileURLToPath(new URL('./askpass.mjs', import.meta.url)))} "$@"\n`, { mode: 0o700, flag: 'wx' });
+      await writeFile(helper, `#!/bin/sh\nexport ELECTRON_RUN_AS_NODE=1\nexec ${quote(process.execPath)} ${quote(fileURLToPath(new URL('./askpass.mjs', import.meta.url)))} "$@"\n`, { mode: 0o700, flag: 'wx' });
       const args = sshArgs(record.connection).map(arg => arg === 'BatchMode=yes' ? 'BatchMode=no' : arg === 'StrictHostKeyChecking=yes' ? 'StrictHostKeyChecking=ask' : arg);
+      if (record.authMode === 'key') {
+        args.splice(args.indexOf('--'), 0, '-o', 'PreferredAuthentications=publickey', '-o', 'PasswordAuthentication=no', '-o', 'KbdInteractiveAuthentication=no', '-o', 'NumberOfPasswordPrompts=0');
+        record.phase = 'checking';
+        if (await this.run(record, ['ssh', ...args, "printf 'DSH_SSH_KEY_OK'"], { SSH_ASKPASS: helper, SSH_ASKPASS_REQUIRE: 'force', DISPLAY: 'dsh-ssh:0', DSH_SSH_ASKPASS_FILE: credentials }) !== 'DSH_SSH_KEY_OK') throw new Error('密钥连接校验失败');
+        record.phase = 'success'; return;
+      }
       args.splice(args.indexOf('--'), 0, '-o', 'PreferredAuthentications=password', '-o', 'PubkeyAuthentication=no', '-o', 'KbdInteractiveAuthentication=no', '-o', 'NumberOfPasswordPrompts=1');
       record.phase = 'installing'; record.mayHaveInstalledKey = true;
       await this.run(record, ['ssh', ...args, installPublicKey(publicKey)], { SSH_ASKPASS: helper, SSH_ASKPASS_REQUIRE: 'force', DISPLAY: 'dsh-ssh:0', DSH_SSH_ASKPASS_FILE: credentials });
